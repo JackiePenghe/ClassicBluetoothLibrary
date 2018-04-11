@@ -318,7 +318,7 @@ public class ClassicBluetoothSocketClient {
         @Override
         public void run() {
             BluetoothDevice remoteDevice = bluetoothAdapter.getRemoteDevice(address);
-            BluetoothSocket rfcommSocketToServiceRecord = null;
+            BluetoothSocket rfcommSocketToServiceRecord;
             try {
                 Tool.warnOut(TAG, "开始准备连接");
                 rfcommSocketToServiceRecord = remoteDevice.createRfcommSocketToServiceRecord(uuid);
@@ -341,7 +341,7 @@ public class ClassicBluetoothSocketClient {
          */
         private static class InputStreamListenerThread extends Thread {
 
-            /*---------------------------Socket实例---------------------------*/
+            /*---------------------------成员变量---------------------------*/
 
             /**
              * Socket实例

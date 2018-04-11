@@ -9,7 +9,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,10 +53,6 @@ public class ClassicBluetoothSocketServer {
      */
     private boolean initStatus;
     /**
-     * Handler
-     */
-    private ServerSocketHandler serverSocketHandler = new ServerSocketHandler(ClassicBluetoothSocketServer.this);
-    /**
      * 记录Socket 服务端是否已经开启
      */
     private boolean started;
@@ -84,6 +79,7 @@ public class ClassicBluetoothSocketServer {
     private boolean serverSocketRun;
     private OutputStream outputStream;
     private InputStream inputStream;
+    private SocketHandler socketHandler = new SocketHandler(this);
 
     /*---------------------------构造方法---------------------------*/
 
@@ -186,6 +182,8 @@ public class ClassicBluetoothSocketServer {
             return ClassicBluetoothConstants.SOCKET_SERVER_STARTED;
         }
         started = true;
+        ServerThread serverThread = new ServerThread(this);
+        serverThread.start();
         return ClassicBluetoothConstants.SOCKET_SERVER_START_SUCCESS;
     }
 
@@ -276,19 +274,158 @@ public class ClassicBluetoothSocketServer {
         this.onSocketServerCreateSuccessListener = onSocketServerCreateSuccessListener;
     }
 
-    /*---------------------------静态内部类---------------------------*/
+    private static class ServerThread extends Thread {
 
-    private static class ServerSocketHandler extends Handler {
+        private ClassicBluetoothSocketServer classicBluetoothSocketServer;
 
+        /**
+         * Allocates a new {@code Thread} object. This constructor has the same
+         * effect as {@linkplain #Thread(ThreadGroup, Runnable, String) Thread}
+         * {@code (null, null, gname)}, where {@code gname} is a newly generated
+         * name. Automatically generated names are of the form
+         * {@code "Thread-"+}<i>n</i>, where <i>n</i> is an integer.
+         */
+        @SuppressWarnings("JavadocReference")
+        ServerThread(ClassicBluetoothSocketServer classicBluetoothSocketServer) {
+            this.classicBluetoothSocketServer = classicBluetoothSocketServer;
+            classicBluetoothSocketServer.serverSocketRun = true;
+        }
+
+        /**
+         * If this thread was constructed using a separate
+         * <code>Runnable</code> run object, then that
+         * <code>Runnable</code> object's <code>run</code> method is called;
+         * otherwise, this method does nothing and returns.
+         * <p>
+         * Subclasses of <code>Thread</code> should override this method.
+         *
+         * @see #start()
+         * @see #stop()
+         * @see #Thread(ThreadGroup, Runnable, String)
+         */
+        @SuppressWarnings("JavadocReference")
+        @Override
+        public void run() {
+            while (classicBluetoothSocketServer.serverSocketRun) {
+                BluetoothSocket acceptSocket = null;
+                try {
+                    acceptSocket = classicBluetoothSocketServer.bluetoothServerSocket.accept();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                if (acceptSocket == null) {
+                    return;
+                }
+                try {
+                    classicBluetoothSocketServer.outputStream = acceptSocket.getOutputStream();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                InputStreamListenerThread inputStreamListenerThread = new InputStreamListenerThread(classicBluetoothSocketServer, acceptSocket);
+                inputStreamListenerThread.start();
+                if (classicBluetoothSocketServer.onSocketServerCreateSuccessListener != null) {
+                    classicBluetoothSocketServer.onSocketServerCreateSuccessListener.onSocketServerCreateSuccess(classicBluetoothSocketServer.bluetoothServerSocket);
+                }
+            }
+        }
+    }
+
+    /**
+     * 监听输入流的线程
+     */
+    private static class InputStreamListenerThread extends Thread {
+
+        /*---------------------------成员变量---------------------------*/
+
+        private ClassicBluetoothSocketServer classicBluetoothSocketServer;
+        /**
+         * Socket实例
+         */
+        private BluetoothSocket bluetoothSocket;
+
+        /**
+         * Allocates a new {@code Thread} object. This constructor has the same
+         * effect as {@linkplain #Thread(ThreadGroup, Runnable, String) Thread}
+         * {@code (null, null, gname)}, where {@code gname} is a newly generated
+         * name. Automatically generated names are of the form
+         * {@code "Thread-"+}<i>n</i>, where <i>n</i> is an integer.
+         */
+        @SuppressWarnings("JavadocReference")
+        InputStreamListenerThread(ClassicBluetoothSocketServer classicBluetoothSocketServer, BluetoothSocket bluetoothSocket) {
+            this.classicBluetoothSocketServer = classicBluetoothSocketServer;
+            this.bluetoothSocket = bluetoothSocket;
+        }
+
+        /**
+         * If this thread was constructed using a separate
+         * <code>Runnable</code> run object, then that
+         * <code>Runnable</code> object's <code>run</code> method is called;
+         * otherwise, this method does nothing and returns.
+         * <p>
+         * Subclasses of <code>Thread</code> should override this method.
+         *
+         * @see #start()
+         * @see #stop()
+         * @see #Thread(ThreadGroup, Runnable, String)
+         */
+        @SuppressWarnings("JavadocReference")
+        @Override
+        public void run() {
+            if (bluetoothSocket == null) {
+                return;
+            }
+
+            try {
+                classicBluetoothSocketServer.inputStream = bluetoothSocket.getInputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            while (bluetoothSocket.isConnected()) {
+                InputStream inputStream = classicBluetoothSocketServer.inputStream;
+
+                if (inputStream == null) {
+                    Tool.warnOut(TAG, "输入流为空 返回");
+                    continue;
+                }
+                try {
+
+                    byte[] bytes = new byte[1024];
+                    int length = inputStream.read(bytes);
+                    if (length == -1) {
+                        return;
+                    }
+                    byte[] cacheBytes = new byte[length];
+                    System.arraycopy(bytes, 0, cacheBytes, 0, length);
+                    final String text = new String(cacheBytes);
+                    Tool.warnOut(TAG, "inputStream text = " + text);
+                    Message message = new Message();
+                    message.what = ClassicBluetoothSocketServer.SocketHandler.WHAT_DEVICE_RECEIVE_DATA;
+                    Bundle bundle = new Bundle();
+                    bundle.putString(ClassicBluetoothSocketServer.SocketHandler.KEY_DEVICE_RECEIVE_DATA, text);
+                    message.setData(bundle);
+                    classicBluetoothSocketServer.socketHandler.sendMessage(message);
+                    inputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /**
+     * handler
+     */
+    private static class SocketHandler extends Handler {
 
         /*---------------------------静态常量---------------------------*/
 
-        public static final int WHAT_DEVICE_CONNECT = 1;
-        public static final int WHAT_DEVICE_RECEIVE_DATA = 2;
+        static final int WHAT_DEVICE_CONNECT = 1;
+        static final int WHAT_DEVICE_RECEIVE_DATA = 2;
 
         public static final String KEY_DEVICE_RECEIVE_DATA = "key_device_receive_data";
 
         /*---------------------------成员变量---------------------------*/
+
 
         private ClassicBluetoothSocketServer classicBluetoothSocketServer;
 
@@ -301,7 +438,7 @@ public class ClassicBluetoothSocketServer {
          * If this thread does not have a looper, this handler won't be able to receive messages
          * so an exception is thrown.
          */
-        ServerSocketHandler(ClassicBluetoothSocketServer classicBluetoothSocketServer) {
+        SocketHandler(ClassicBluetoothSocketServer classicBluetoothSocketServer) {
             this.classicBluetoothSocketServer = classicBluetoothSocketServer;
         }
 
@@ -316,93 +453,20 @@ public class ClassicBluetoothSocketServer {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case WHAT_DEVICE_CONNECT:
-                    classicBluetoothSocketServer.onSocketDeviceConnectedListener.onDeviceConnected(classicBluetoothSocketServer.acceptSocket);
+                    if (classicBluetoothSocketServer.onSocketDeviceConnectedListener != null) {
+                        classicBluetoothSocketServer.onSocketDeviceConnectedListener.onDeviceConnected(classicBluetoothSocketServer.acceptSocket);
+                    }
                     break;
                 case WHAT_DEVICE_RECEIVE_DATA:
                     Bundle data = msg.getData();
-                    String text = data.getString(ServerSocketHandler.KEY_DEVICE_RECEIVE_DATA);
-                    classicBluetoothSocketServer.onSocketServerReceiveDataListener.onSocketServerReceiveData(classicBluetoothSocketServer.acceptSocket.getRemoteDevice().getName(), classicBluetoothSocketServer.acceptSocket.getRemoteDevice().getAddress(), text);
+                    String string = data.getString(KEY_DEVICE_RECEIVE_DATA);
+                    if (classicBluetoothSocketServer.onSocketServerReceiveDataListener != null) {
+                        classicBluetoothSocketServer.onSocketServerReceiveDataListener.onSocketServerReceiveData(classicBluetoothSocketServer.acceptSocket.getRemoteDevice().getName(), classicBluetoothSocketServer.acceptSocket.getRemoteDevice().getAddress(), string);
+                    }
                     break;
                 default:
                     super.handleMessage(msg);
                     break;
-            }
-        }
-    }
-
-    /**
-     * This thread runs during a connection with a remote device.
-     * It handles all incoming and outgoing transmissions.
-     */
-    private class ConnectedThread extends Thread {
-        private final BluetoothSocket mmSocket;
-        private final InputStream mmInStream;
-        private final OutputStream mmOutStream;
-
-        ConnectedThread(BluetoothSocket socket, String socketType) {
-            Log.d(TAG, "create ConnectedThread: " + socketType);
-            mmSocket = socket;
-            InputStream tmpIn = null;
-            OutputStream tmpOut = null;
-
-            // Get the BluetoothSocket input and output streams
-            try {
-                tmpIn = socket.getInputStream();
-                tmpOut = socket.getOutputStream();
-            } catch (IOException e) {
-                Log.e(TAG, "temp sockets not created", e);
-            }
-
-            mmInStream = tmpIn;
-            mmOutStream = tmpOut;
-            mState = STATE_CONNECTED;
-        }
-
-        @Override
-        public void run() {
-            Log.i(TAG, "BEGIN mConnectedThread");
-            byte[] buffer = new byte[1024];
-            int bytes;
-
-            // Keep listening to the InputStream while connected
-            while (mState == STATE_CONNECTED) {
-                try {
-                    // Read from the InputStream
-                    bytes = mmInStream.read(buffer);
-
-                    // Send the obtained bytes to the UI Activity
-                    mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, buffer)
-                            .sendToTarget();
-                } catch (IOException e) {
-                    Log.e(TAG, "disconnected", e);
-                    connectionLost();
-                    break;
-                }
-            }
-        }
-
-        /**
-         * Write to the connected OutStream.
-         *
-         * @param buffer The bytes to write
-         */
-        public void write(byte[] buffer) {
-            try {
-                mmOutStream.write(buffer);
-
-                // Share the sent message back to the UI Activity
-                mHandler.obtainMessage(Constants.MESSAGE_WRITE, -1, -1, buffer)
-                        .sendToTarget();
-            } catch (IOException e) {
-                Log.e(TAG, "Exception during write", e);
-            }
-        }
-
-        public void cancel() {
-            try {
-                mmSocket.close();
-            } catch (IOException e) {
-                Log.e(TAG, "close() of connect socket failed", e);
             }
         }
     }
