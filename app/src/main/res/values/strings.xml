@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">ClassicBluetoothLibrary</string>
+    <string name="message_permission_rationale">允许以下权限以便程序继续执行：\n\n%1$s</string>
+    <string name="title_dialog">提示</string>
+    <string name="resume">继续</string>
+    <string name="cancel">取消</string>
+    <string name="message_permission_always_failed">我们需要以下权限，请在设置中为我们开启：\n\n%1$s</string>
+    <string name="setting">设置</string>
+    <string name="no">不</string>
+    <string name="start_scan">开始搜索</string>
+    <string name="stop_scan">停止搜索</string>
+    <string name="start_search">开始搜寻设备</string>
+    <string name="stop_search">停止搜寻设备</string>
+    <string name="create_service">创建Socket服务端</string>
+    <string name="connect_service">连接socket服务端</string>
+    <string name="start_bound">开始绑定</string>
+    <string name="unbound">解除绑定</string>
+    <string name="unbound_success">解绑成功</string>
+    <string name="unbound_failed">解绑失败</string>
+    <string name="bound_device">绑定设备</string>
+    <string name="create">创建</string>
+    <string name="connect">连接</string>
+    <string name="a2dp">A2DP</string>
+    <string name="send">发送</string>
+    <string name="input_message">输入信息</string>
+    <string name="null_input">请输入文本后点击发送</string>
+    <string name="send_success">发送成功</string>
+    <string name="send_failed">发送失败</string>
+</resources>
