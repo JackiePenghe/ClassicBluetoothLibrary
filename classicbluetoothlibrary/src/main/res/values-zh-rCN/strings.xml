@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">ClassicBluetoothLibrary</string>
     <string name="no_bluetooth_module">您的手机不支持蓝牙</string>
+    <string name="bluetooth_off">蓝牙已关闭</string>
+    <string name="bluetooth_on">蓝牙已打开</string>
 </resources>
