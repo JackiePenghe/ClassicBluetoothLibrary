@@ -117,7 +117,7 @@ bintray {
     pkg {
         repo ="maven"// 上传到maven库。
 // 发布到Bintray上的项目名字，这里的名字不是compile 'com.yanzhenjie:andserver:1.0.1'中的andserver。而是项目中，module的名字。详细请看下方图示
-        name ="baselibrary"
+        name ="classicbluetoothlibrary"
         userOrg ='jackiepenghe' // Bintray的用户名。
         websiteUrl = siteUrl
         vcsUrl = gitUrl
