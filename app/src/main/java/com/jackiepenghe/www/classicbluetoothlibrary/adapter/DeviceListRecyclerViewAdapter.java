@@ -9,6 +9,9 @@ import com.chad.library.adapter.base.BaseViewHolder;
 
 import java.util.List;
 
+/**
+ * @author jackie
+ */
 public class DeviceListRecyclerViewAdapter extends BaseQuickAdapter<BluetoothDevice, BaseViewHolder> {
   /**
      * Same as QuickAdapter#QuickAdapter(Context,int) but with
