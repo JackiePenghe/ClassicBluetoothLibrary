@@ -9,8 +9,8 @@ android {
     defaultConfig {
         minSdkVersion 18
         targetSdkVersion 27
-        versionCode 1
-        versionName "1.0"
+        versionCode 3
+        versionName "0.0.3"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -32,7 +32,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
 }
 
-version="0.0.2"
+version="0.0.3"
 // 项目主页。
 def siteUrl ='https://github.com/JackiePenghe/ClassicBluetoothLibrary'
 // Git仓库的url。（此处一定要是ssh链接）
