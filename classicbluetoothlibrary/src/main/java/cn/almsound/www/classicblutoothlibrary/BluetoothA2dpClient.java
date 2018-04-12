@@ -118,8 +118,9 @@ public class BluetoothA2dpClient {
      * 连接设备
      *
      * @param address 设备地址
+     * @return true表示成功发起请求
      */
-    @SuppressWarnings("unused")
+    @Deprecated
     public boolean startConnect(String address) {
         if (bluetoothAdapter == null) {
             return false;
@@ -132,12 +133,22 @@ public class BluetoothA2dpClient {
     }
 
     /**
-     * 绑定并连接设备
+     * 连接设备
      *
-     * @param bluetoothDevice 蓝牙设备
+     * @param bluetoothDevice 设备
+     * @return true表示成功发起请求
+     */
+    public boolean startConnect(BluetoothDevice bluetoothDevice) {
+        this.bluetoothDevice = bluetoothDevice;
+        return startConnect();
+    }
+
+    /**
+     * 绑定并连接设备
+     * @return true表示成功发起请求
      */
     @SuppressWarnings("WeakerAccess")
-    public boolean startConnect(BluetoothDevice bluetoothDevice) {
+    private boolean startConnect() {
 
         if (bluetoothDevice == null) {
             return false;
@@ -146,8 +157,6 @@ public class BluetoothA2dpClient {
         if (bluetoothA2dp == null) {
             return false;
         }
-
-        this.bluetoothDevice = bluetoothDevice;
 
         try {
             //noinspection JavaReflectionMemberAccess

@@ -29,7 +29,6 @@ public class A2dpActivity extends BaseAppCompatActivity {
     /*---------------------------静态常量---------------------------*/
 
     private static final String TAG = A2dpActivity.class.getSimpleName();
-    private static final String ADDRSESS = "00:02:5B:00:FF:07";
 
 
     /*---------------------------成员变量---------------------------*/
@@ -53,7 +52,7 @@ public class A2dpActivity extends BaseAppCompatActivity {
         @Override
         public void onBluetoothA2dpServiceConnected() {
             Tool.warnOut(TAG, "已连接A2DP");
-            boolean b = bluetoothA2DpClient.startConnect(ADDRSESS);
+            boolean b = bluetoothA2DpClient.startConnect(bluetoothDevice);
             if (b) {
                 Tool.warnOut(TAG, "开始连接设备");
             } else {
@@ -178,7 +177,6 @@ public class A2dpActivity extends BaseAppCompatActivity {
      */
     @Override
     protected void doAfterAll() {
-
     }
 
     /**
