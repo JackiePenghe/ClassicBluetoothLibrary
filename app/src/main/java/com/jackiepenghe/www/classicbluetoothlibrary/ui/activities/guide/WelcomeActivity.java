@@ -15,7 +15,7 @@ import com.yanzhenjie.permission.AndPermission;
 import com.yanzhenjie.permission.Permission;
 import com.yanzhenjie.permission.Rationale;
 import com.yanzhenjie.permission.RequestExecutor;
-import com.yanzhenjie.permission.SettingService;
+import com.yanzhenjie.permission.Setting;
 
 import java.util.List;
 
@@ -37,7 +37,7 @@ public class WelcomeActivity extends BaseWelcomeActivity {
     /**
      * 当用户拒绝了某一个权限，但是程序运行有必须这个权限时，就需要使用Rationale
      */
-    private Rationale rationale = new Rationale() {
+    private Rationale<List<String>> rationale = new Rationale<List<String>>() {
         @Override
         public void showRationale(Context context, List<String> permissions, final RequestExecutor executor) {
             List<String> permissionNames = Permission.transformText(context, permissions);
@@ -66,17 +66,23 @@ public class WelcomeActivity extends BaseWelcomeActivity {
     /**
      * 当权限请求全部通过时，执行的动作
      */
-    private Action grantedAction = new Action() {
+    private Action<List<String>> grantedAction = new Action<List<String>>() {
         @Override
         public void onAction(List<String> permissions) {
             toNext();
+        }
+    };
+    private Setting.Action onComeback = new Setting.Action() {
+        @Override
+        public void onAction() {
+            doAfterAnimation();
         }
     };
 
     /**
      * 当权限请求失败的时候，执行的动作
      */
-    private Action deniedAction = new Action() {
+    private Action<List<String>> deniedAction = new Action<List<String>>() {
         @Override
         public void onAction(List<String> permissions) {
 
@@ -88,8 +94,6 @@ public class WelcomeActivity extends BaseWelcomeActivity {
             if (AndPermission.hasAlwaysDeniedPermission(WelcomeActivity.this, permissions)) {
                 List<String> permissionNames = Permission.transformText(WelcomeActivity.this, permissions);
                 String message = WelcomeActivity.this.getString(R.string.message_permission_always_failed, TextUtils.join("\n", permissionNames));
-
-                final SettingService settingService = AndPermission.permissionSetting(WelcomeActivity.this);
                 new AlertDialog.Builder(WelcomeActivity.this)
                         .setCancelable(false)
                         .setTitle(R.string.title_dialog)
@@ -97,13 +101,16 @@ public class WelcomeActivity extends BaseWelcomeActivity {
                         .setPositiveButton(R.string.setting, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                settingService.execute();
+                                AndPermission.with(WelcomeActivity.this)
+                                        .runtime()
+                                        .setting()
+                                        .onComeback(onComeback)
+                                        .start();
                             }
                         })
                         .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                settingService.cancel();
                             }
                         })
                         .show();
@@ -120,22 +127,33 @@ public class WelcomeActivity extends BaseWelcomeActivity {
     @Override
     protected void doAfterAnimation() {
 
-        if (!ClassicBluetoothManager.isSupportBluetooth()){
-            Tool.toastL(WelcomeActivity.this,R.string.no_bluetooth_module);
+        if (!ClassicBluetoothManager.isSupportBluetooth()) {
+            Tool.toastL(WelcomeActivity.this, R.string.no_bluetooth_module);
             onBackPressed();
             return;
         }
 
-        if (!ClassicBluetoothManager.isBluetoothOpened()){
+        if (!ClassicBluetoothManager.isBluetoothOpened()) {
             ClassicBluetoothManager.openBlueTooth(WelcomeActivity.this);
         }
 
         AndPermission.with(WelcomeActivity.this)
+                .runtime()
                 .permission(Permission.ACCESS_FINE_LOCATION, Permission.ACCESS_COARSE_LOCATION)
                 .rationale(rationale)
                 .onGranted(grantedAction)
                 .onDenied(deniedAction)
                 .start();
+    }
+
+    /**
+     * 设置ImageView的图片资源
+     *
+     * @return 图片资源ID
+     */
+    @Override
+    protected int setImageViewSource() {
+        return 0;
     }
 
     /*---------------------------私有方法---------------------------*/
