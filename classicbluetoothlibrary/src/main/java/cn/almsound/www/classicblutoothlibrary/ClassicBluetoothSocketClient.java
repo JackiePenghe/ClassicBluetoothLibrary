@@ -114,6 +114,7 @@ public class ClassicBluetoothSocketClient {
     /**
      * 发起连接
      *
+     * @param uuid uuid
      * @return true表示成功发起连接
      */
     @SuppressWarnings("WeakerAccess")
@@ -132,6 +133,7 @@ public class ClassicBluetoothSocketClient {
 
     /**
      * 关闭
+     * @return true表示关闭成功
      */
     public boolean close() {
         if (!initStatus) {
@@ -208,10 +210,10 @@ public class ClassicBluetoothSocketClient {
 
         /*---------------------------静态常量---------------------------*/
 
-        public static final int WHAT_DEVICE_CONNECT = 1;
-        public static final int WHAT_DEVICE_RECEIVE_DATA = 2;
+        static final int WHAT_DEVICE_CONNECT = 1;
+        static final int WHAT_DEVICE_RECEIVE_DATA = 2;
 
-        public static final String KEY_DEVICE_RECEIVE_DATA = "key_device_receive_data";
+        static final String KEY_DEVICE_RECEIVE_DATA = "key_device_receive_data";
 
         /*---------------------------成员变量---------------------------*/
 

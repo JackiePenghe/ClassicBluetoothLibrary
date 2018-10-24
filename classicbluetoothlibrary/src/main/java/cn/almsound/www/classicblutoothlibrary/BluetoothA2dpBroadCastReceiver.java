@@ -1,5 +1,6 @@
 package cn.almsound.www.classicblutoothlibrary;
 
+import android.annotation.SuppressLint;
 import android.app.job.JobScheduler;
 import android.app.job.JobService;
 import android.bluetooth.BluetoothA2dp;
@@ -7,7 +8,12 @@ import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.regex.Pattern;
 
 /**
  * 监听A2DP相关的广播接收者
@@ -15,6 +21,13 @@ import android.os.Handler;
  * @author jackie
  */
 class BluetoothA2dpBroadCastReceiver extends BroadcastReceiver {
+
+
+    private static final Pattern PATTERN = Pattern.compile("[0-9]*");
+
+    private static final String EXTRA_PAIRING_VARIANT = "android.bluetooth.device.extra.PAIRING_VARIANT";
+
+    private static final String TAG = BluetoothA2dpBroadCastReceiver.class.getSimpleName();
 
     /*---------------------------成员变量---------------------------*/
 
@@ -27,6 +40,9 @@ class BluetoothA2dpBroadCastReceiver extends BroadcastReceiver {
      * Handler
      */
     private Handler handler = new Handler();
+    private boolean autoBound;
+    private String pin;
+    private BluetoothDevice remoteDevice;
 
     /*---------------------------实现父类方法---------------------------*/
 
@@ -65,7 +81,7 @@ class BluetoothA2dpBroadCastReceiver extends BroadcastReceiver {
      * @param context The Context in which the receiver is running.
      * @param intent  The Intent being received.
      */
-    @SuppressWarnings("JavadocReference")
+    @SuppressWarnings({"JavadocReference", "JavaDoc"})
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
@@ -76,68 +92,130 @@ class BluetoothA2dpBroadCastReceiver extends BroadcastReceiver {
         if (device == null) {
             return;
         }
-        if (handler == null){
+        if (handler == null) {
             return;
         }
         switch (action) {
             //A2DP设备的连接状态被改变
             case BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED:
                 int bluetoothA2dpConnectionState = intent.getIntExtra(BluetoothA2dp.EXTRA_STATE, -1);
-                switch (bluetoothA2dpConnectionState) {
-                    case BluetoothA2dp.STATE_CONNECTING:
-                        if (handler == null){
-                            return;
+                processConnectStateChanged(device, bluetoothA2dpConnectionState);
+                break;
+            case BluetoothDevice.ACTION_PAIRING_REQUEST:
+                if (processAutoBound(intent)) {
+                    abortBroadcast();
+                }
+                break;
+            default:
+                break;
+
+        }
+
+    }
+
+    private boolean processAutoBound(Intent intent) {
+        int mType;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+            mType = intent.getIntExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.ERROR);
+        } else {
+            mType = intent.getIntExtra(EXTRA_PAIRING_VARIANT, BluetoothDevice.ERROR);
+        }
+        boolean result;
+        if (autoBound && pin != null && pin.length() >= 4 && isNumeric(pin) && remoteDevice != null) {
+            switch (mType) {
+                case BluetoothDevice.PAIRING_VARIANT_PIN:
+                    result = autoBoundByPin();
+                    break;
+                case BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION:
+                    result = autoBoundByPassword();
+                    break;
+                default:
+                    result = false;
+                    break;
+            }
+        } else {
+            result = false;
+        }
+        return result;
+    }
+
+    private boolean autoBoundByPassword() {
+        try {
+            @SuppressWarnings("JavaReflectionMemberAccess") @SuppressLint("PrivateApi") Method setPasskey = remoteDevice.getClass().getDeclaredMethod("setPasskey", int.class);
+            setPasskey.setAccessible(true);
+            return (boolean) setPasskey.invoke(remoteDevice, Integer.valueOf(pin));
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private boolean autoBoundByPin() {
+        boolean result;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            result = remoteDevice.setPin(pin.getBytes());
+        } else {
+            result = setDevicePin(pin);
+        }
+        return result;
+    }
+
+    private void processConnectStateChanged(final BluetoothDevice device, int bluetoothA2dpConnectionState) {
+        switch (bluetoothA2dpConnectionState) {
+            case BluetoothA2dp.STATE_CONNECTING:
+                if (handler == null) {
+                    return;
+                }
+                if (onBluetoothA2dpDeviceConnectStateChangedListener != null) {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            onBluetoothA2dpDeviceConnectStateChangedListener.onBluetoothA2dpDeviceConnecting(device);
                         }
-                        if (onBluetoothA2dpDeviceConnectStateChangedListener != null){
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    onBluetoothA2dpDeviceConnectStateChangedListener.onBluetoothA2dpDeviceConnecting(device);
-                                }
-                            });
+                    });
+                }
+                break;
+            case BluetoothA2dp.STATE_CONNECTED:
+                if (handler == null) {
+                    return;
+                }
+                if (onBluetoothA2dpDeviceConnectStateChangedListener != null) {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            onBluetoothA2dpDeviceConnectStateChangedListener.onBluetoothA2dpDeviceConnected(device);
                         }
-                        break;
-                    case BluetoothA2dp.STATE_CONNECTED:
-                        if (handler == null){
-                            return;
+                    });
+                }
+                break;
+            case BluetoothA2dp.STATE_DISCONNECTING:
+                if (handler == null) {
+                    return;
+                }
+                if (onBluetoothA2dpDeviceConnectStateChangedListener != null) {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            onBluetoothA2dpDeviceConnectStateChangedListener.onBluetoothA2dpDeviceDisconnecting(device);
                         }
-                        if (onBluetoothA2dpDeviceConnectStateChangedListener != null){
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    onBluetoothA2dpDeviceConnectStateChangedListener.onBluetoothA2dpDeviceConnected(device);
-                                }
-                            });
+                    });
+                }
+                break;
+            case BluetoothA2dp.STATE_DISCONNECTED:
+                if (handler == null) {
+                    return;
+                }
+                if (onBluetoothA2dpDeviceConnectStateChangedListener != null) {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            onBluetoothA2dpDeviceConnectStateChangedListener.onBluetoothA2dpDeviceDisconnected(device);
                         }
-                        break;
-                    case BluetoothA2dp.STATE_DISCONNECTING:
-                        if (handler == null){
-                            return;
-                        }
-                        if (onBluetoothA2dpDeviceConnectStateChangedListener != null){
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    onBluetoothA2dpDeviceConnectStateChangedListener.onBluetoothA2dpDeviceDisconnecting(device);
-                                }
-                            });
-                        }
-                        break;
-                    case BluetoothA2dp.STATE_DISCONNECTED:
-                        if (handler == null){
-                            return;
-                        }
-                        if (onBluetoothA2dpDeviceConnectStateChangedListener != null){
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    onBluetoothA2dpDeviceConnectStateChangedListener.onBluetoothA2dpDeviceDisconnected(device);
-                                }
-                            });
-                        }
-                        break;
-                    default:
-                        break;
+                    });
                 }
                 break;
             default:
@@ -147,6 +225,7 @@ class BluetoothA2dpBroadCastReceiver extends BroadcastReceiver {
 
     /**
      * 设置A2DP与设备的连接状态改变时的回调
+     *
      * @param onBluetoothA2dpDeviceConnectStateChangedListener A2DP与设备的连接状态改变时的回调
      */
     void setOnBluetoothA2dpDeviceConnectStateChangedListener(ClassicBluetoothInterface.OnBluetoothA2dpDeviceConnectStateChangedListener onBluetoothA2dpDeviceConnectStateChangedListener) {
@@ -156,8 +235,42 @@ class BluetoothA2dpBroadCastReceiver extends BroadcastReceiver {
     /**
      * 关闭
      */
-    void close(){
+    void close() {
         onBluetoothA2dpDeviceConnectStateChangedListener = null;
         handler = null;
+    }
+
+    public static boolean isNumeric(String str) {
+        return PATTERN.matcher(str).matches();
+
+    }
+
+    void setRemoteDevice(BluetoothDevice remoteDevice) {
+        this.remoteDevice = remoteDevice;
+    }
+
+    void setPin(String pin) {
+        this.pin = pin;
+    }
+
+    void setAutoBound(boolean autoBound) {
+        this.autoBound = autoBound;
+    }
+
+    private boolean setDevicePin(String pin) {
+        if (remoteDevice == null) {
+            return false;
+        }
+        try {
+            Method setPin = remoteDevice.getClass().getDeclaredMethod("setPin", byte[].class);
+            return (boolean) setPin.invoke(remoteDevice, (Object) pin.getBytes());
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

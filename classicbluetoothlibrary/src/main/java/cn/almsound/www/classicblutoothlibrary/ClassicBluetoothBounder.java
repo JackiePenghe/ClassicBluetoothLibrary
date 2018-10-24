@@ -84,13 +84,7 @@ public class ClassicBluetoothBounder {
             return false;
         }
 
-        BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-
-        if (bluetoothManager == null) {
-            return false;
-        }
-
-        BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         if (bluetoothAdapter == null) {
             return false;

@@ -4,13 +4,13 @@ apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 27
-        versionCode 3
-        versionName "0.0.4"
+        targetSdkVersion 28
+        versionCode 6
+        versionName "0.0.6"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -26,13 +26,13 @@ android {
 }
 
 dependencies {
-    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
 
-version="0.0.3"
+version="0.0.5"
 // 项目主页。
 def siteUrl ='https://github.com/JackiePenghe/ClassicBluetoothLibrary'
 // Git仓库的url。（此处一定要是ssh链接）

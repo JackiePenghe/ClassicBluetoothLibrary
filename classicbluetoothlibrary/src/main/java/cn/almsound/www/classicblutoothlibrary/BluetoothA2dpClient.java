@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 
@@ -21,6 +22,8 @@ import java.lang.reflect.Method;
  * @author jackie
  */
 public class BluetoothA2dpClient {
+
+    private static final String ACTION_PAIRING_REQUEST = "android.bluetooth.device.action.PAIRING_REQUEST";
 
     /*------------------------成员变量----------------------------*/
 
@@ -114,6 +117,20 @@ public class BluetoothA2dpClient {
         return bluetoothAdapter.getProfileProxy(context, defaultProfileServiceListener, BluetoothProfile.A2DP);
     }
 
+
+
+    public void setPin(String pin) {
+       if (bluetoothA2dpBroadCastReceiver != null){
+           bluetoothA2dpBroadCastReceiver.setPin(pin);
+       }
+    }
+
+    public void setAutoBound(boolean autoBound) {
+        if (bluetoothA2dpBroadCastReceiver != null){
+            bluetoothA2dpBroadCastReceiver.setAutoBound(autoBound);
+        }
+    }
+
     /**
      * 连接设备
      *
@@ -140,6 +157,7 @@ public class BluetoothA2dpClient {
      */
     public boolean startConnect(BluetoothDevice bluetoothDevice) {
         this.bluetoothDevice = bluetoothDevice;
+        bluetoothA2dpBroadCastReceiver.setRemoteDevice(bluetoothDevice);
         return startConnect();
     }
 
@@ -148,7 +166,8 @@ public class BluetoothA2dpClient {
      * @return true表示成功发起请求
      */
     @SuppressWarnings("WeakerAccess")
-    private boolean startConnect() {
+    private boolean
+    startConnect() {
 
         if (bluetoothDevice == null) {
             return false;
@@ -157,7 +176,6 @@ public class BluetoothA2dpClient {
         if (bluetoothA2dp == null) {
             return false;
         }
-
         try {
             //noinspection JavaReflectionMemberAccess
             @SuppressLint("PrivateApi") Method connect = bluetoothA2dp.getClass().getDeclaredMethod("connect", BluetoothDevice.class);
@@ -259,6 +277,11 @@ public class BluetoothA2dpClient {
     private IntentFilter makeIntentFilter() {
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
+        }else {
+            filter.addAction(ACTION_PAIRING_REQUEST);
+        }
         return filter;
     }
 }

@@ -231,6 +231,8 @@ public class A2dpActivity extends BaseAppCompatActivity {
             Tool.warnOut(TAG, "初始化失败");
             return;
         }
+        bluetoothA2DpClient.setAutoBound(true);
+        bluetoothA2DpClient.setPin("0000");
         bluetoothA2DpClient.setOnBluetoothA2dpDeviceConnectStateChangedListener(onBluetoothA2dpDeviceConnectStateChangedListener);
     }
 
