@@ -32,56 +32,46 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
 
-version="0.0.5"
-// 项目主页。
+version="0.0.6"
 def siteUrl ='https://github.com/JackiePenghe/ClassicBluetoothLibrary'
-// Git仓库的url。（此处一定要是ssh链接）
 def gitUrl ='git@github.com:JackiePenghe/ClassicBluetoothLibrary.git'
-// 唯一包名，比如compile 'com.jackiepenghe:blelibrary:0.6.6'中的com.jackiepenghe就是这里配置的。唯一
 group="com.jackiepenghe"
 install {
     repositories.mavenInstaller{
-        // 生成pom.xml和参数
         pom {
             project{
                 packaging'aar'
-                // 项目描述，这里需要修改。
-                name'Classic Bluettoth Library For Android'// 可选，项目名称。
-                description'A classic bluetooth library with sample code'// 可选，项目描述。
-                url siteUrl// 项目主页，这里是引用上面定义好。
-                // 软件开源协议，现在一般都是Apache License2.0
+                name'Classic Bluettoth Library For Android'
+                description'A classic bluetooth library with sample code'
+                url siteUrl
                 licenses {
                     license {
                         name 'The Apache Software License, Version 2.0'
                         url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
                     }
                 }
-                //填写开发者基本信息
                 developers {
                     developer {
-                        id 'jackiepenghe'// 开发者的id。
-                        name 'jackiepenghe'// 开发者名字。
-                        email 'p15583101939@gmail.com'// 开发者邮箱。
+                        id 'jackiepenghe'
+                        name 'jackiepenghe'
+                        email 'p15583101939@gmail.com'
                     }
                 }
-                // SCM，复制我的，这里不需要修改。
                 scm {
-                    connection gitUrl// Git仓库地址。
-                    developerConnection gitUrl// Git仓库地址。
-                    url siteUrl// 项目主页。
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
                 }
             }
         }
     }
 }
-// 生成jar包的task
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
     classifier='sources'
 }
-// 生成jarDoc的task
 task javadoc(type: Javadoc) {
-    options { //如果项目包含中文，最好配置上options,如果没有中文，options这一整项可不要
+    options {
         encoding "UTF-8"
         charSet 'UTF-8'
         author true
@@ -90,11 +80,8 @@ task javadoc(type: Javadoc) {
     }
     source= android.sourceSets.main.java.srcDirs
     classpath+=project.files(android.getBootClasspath().join(File.pathSeparator))
-// destinationDir = file("../javadoc/")
-// 忽略注释语法错误，如果用jdk1.8你的注释写的不规范就编译不过。
     failOnError false
 }
-// 生成javaDoc的jar，不需要修改。
 task javadocJar(type: Jar,dependsOn: javadoc) {
     classifier='javadoc'
     from javadoc.destinationDir
@@ -103,7 +90,6 @@ artifacts {
     archives javadocJar
     archives sourcesJar
 }
-// 这里是读取Bintray相关的信息，我们上传项目到github上的时候会把gradle文件传上去，所以不要把帐号密码的信息直接写在这里，写在local.properties中，这里动态读取。
 Properties properties =new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
 bintray {
@@ -112,7 +98,6 @@ bintray {
     configurations = ['archives']
     pkg {
         repo ="maven"// 上传到maven库。
-        // 发布到Bintray上的项目名字，这里的名字不是compile 'com.yanzhenjie:andserver:1.0.1'中的andserver。而是项目中，module的名字。详细请看下方图示
         name ="classicbluetoothlibrary"
         userOrg ='jackiepenghe' // Bintray的用户名。
         websiteUrl = siteUrl
