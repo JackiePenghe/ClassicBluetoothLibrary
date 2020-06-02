@@ -104,6 +104,13 @@ class BluetoothA2dpBroadCastReceiver extends BroadcastReceiver {
             case BluetoothDevice.ACTION_PAIRING_REQUEST:
                 if (processAutoBound(intent)) {
                     abortBroadcast();
+                    if (onBluetoothA2dpDeviceConnectStateChangedListener != null){
+                        onBluetoothA2dpDeviceConnectStateChangedListener.onBluetoothA2dpDeviceAutoBound(device);
+                    }
+                }else{
+                    if (onBluetoothA2dpDeviceConnectStateChangedListener != null){
+                        onBluetoothA2dpDeviceConnectStateChangedListener.onBluetoothA2dpDeviceRequestBound(device);
+                    }
                 }
                 break;
             default:

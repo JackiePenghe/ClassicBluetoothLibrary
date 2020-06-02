@@ -9,8 +9,8 @@ android {
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 28
-        versionCode 6
-        versionName "0.0.6"
+        versionCode 7
+        versionName "0.0.7"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -32,7 +32,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
 
-version="0.0.6"
+version="0.0.7"
 def siteUrl ='https://github.com/JackiePenghe/ClassicBluetoothLibrary'
 def gitUrl ='git@github.com:JackiePenghe/ClassicBluetoothLibrary.git'
 group="com.jackiepenghe"

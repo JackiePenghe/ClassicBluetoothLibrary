@@ -59,13 +59,6 @@ public class A2dpActivity extends BaseAppCompatActivity {
                 Tool.warnOut(TAG, "连接设备失败，请确认该设备已与本机配对成功");
             }
 
-//            boolean b = bluetoothA2DpClient.startConnect(bluetoothDevice);
-//            if (b) {
-//                Tool.warnOut(TAG, "开始连接设备");
-//            } else {
-//                Tool.warnOut(TAG, "连接设备失败，请确认该设备已与本机配对成功");
-//            }
-
         }
 
         @Override
@@ -98,6 +91,26 @@ public class A2dpActivity extends BaseAppCompatActivity {
         @Override
         public void onBluetoothA2dpDeviceDisconnected(BluetoothDevice bluetoothDevice) {
             Tool.warnOut(TAG, "已断开连接：address = " + bluetoothDevice.getAddress());
+        }
+
+        /**
+         * 当设备请求配对时执行的回调
+         *
+         * @param device 请求配对的设备
+         */
+        @Override
+        public void onBluetoothA2dpDeviceRequestBound(BluetoothDevice device) {
+            Tool.warnOut(TAG, "请求配对");
+        }
+
+        /**
+         * 当设备根据设置的PIN自动配对时执行的回调
+         *
+         * @param device 自动配对的设备
+         */
+        @Override
+        public void onBluetoothA2dpDeviceAutoBound(BluetoothDevice device) {
+            Tool.warnOut(TAG, "自动配对");
         }
     };
 

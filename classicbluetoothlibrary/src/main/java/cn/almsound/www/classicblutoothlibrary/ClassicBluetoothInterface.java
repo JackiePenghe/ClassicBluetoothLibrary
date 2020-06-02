@@ -293,5 +293,17 @@ public class ClassicBluetoothInterface {
          * @param bluetoothDevice 蓝牙设备
          */
         void onBluetoothA2dpDeviceDisconnected(BluetoothDevice bluetoothDevice);
+
+        /**
+         * 当设备请求配对时执行的回调
+         * @param device
+         */
+        void onBluetoothA2dpDeviceRequestBound(BluetoothDevice device);
+
+        /**
+         * 当设备根据设置的PIN自动配对时执行的回调
+         * @param device
+         */
+        void onBluetoothA2dpDeviceAutoBound(BluetoothDevice device);
     }
 }
